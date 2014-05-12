@@ -37,8 +37,8 @@ load("SQSProvider.js");
 
 // configuration needed for testing (should be read from SQL using Espresso Logic)
 var configSetup = {
-    AWSAccessKeyId : "AKIAJCX57NYTDTNT7Q3Q",
-    AWSSecretKey: "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",
+    AWSAccessKeyId : "myAccessKey",
+    AWSSecretKey: "mySecretKey",
     SQSQueueName : "EspressoLogic7"
 };
 
