@@ -17,13 +17,8 @@ package com.espressologic.aws.sqs;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.*;
 
 import java.util.List;
@@ -44,23 +39,22 @@ import java.util.Map.Entry;
  * <b>WANRNING:</b> To avoid accidental leakage of your credentials, DO NOT keep
  * the credentials file in your source directory.
  */
-public class SimpleQueueService {
+public class SqsAmazonService extends AmazonService {
 
-    private static AWSCredentials credentials = null;
     private static String endpoint = null;
     private static String myQueueUrl = null;
-    private static Regions myRegion = Regions.US_EAST_1;/// TO DO - pass as parm?
 
     public static void main(String[] args) throws Exception {
 
         try {
             credentials = null;
-            SimpleQueueService.myQueueUrl = createQueue("EspressoLogic4");
+            SqsAmazonService.myQueueUrl = createQueue("EspressoLogic9");
             listQueues();
-            // sendMessage("My Message Test");
-            // List<Message> messages = readMessage();
-            // deleteMessages(messages);
-            // deleteQueue();
+            String msgID = sendMessage("My Message Test");
+            System.out.println("Message ID " + msgID);
+            String messageID = readMessage(msgID);
+            //deleteMessages(messageID);
+            deleteQueue();
         } catch (AmazonServiceException ase) {
             System.out.println("Caught an AmazonServiceException, which means your request made it " +
                     "to Amazon SQS, but was rejected with an error response for some reason.");
@@ -79,18 +73,19 @@ public class SimpleQueueService {
         }
     }
 
-    public SimpleQueueService(String myEndpoint) {
+    public SqsAmazonService(String myEndpoint) {
+        super();
         System.out.println("queue endpoint name " + myEndpoint);
         this.endpoint = myEndpoint;
         this.myQueueUrl = createQueue(endpoint);
         System.out.println(this.myQueueUrl);
     }
 
-    public SimpleQueueService(String accessKey, String secretKey) {
+    public SqsAmazonService(String accessKey, String secretKey) {
         credentials = new BasicAWSCredentials(accessKey, secretKey);
     }
 
-    public SimpleQueueService(String myEndpoint, String accessKey, String secretKey) {
+    public SqsAmazonService(String myEndpoint, String accessKey, String secretKey) {
         System.out.println("queue endpoint name " + myEndpoint);
         endpoint = myEndpoint;
         this.myQueueUrl = createQueue(endpoint);
@@ -101,94 +96,92 @@ public class SimpleQueueService {
     public static void deleteQueue() {
         // Delete a queue
         System.out.println("Deleting the test queue.\n");
-        getAmazonSQS().deleteQueue(new DeleteQueueRequest(myQueueUrl));
+        createAWSCredentials().deleteQueue(new DeleteQueueRequest(myQueueUrl));
     }
 
-    public static List<String> listQueues() {
+    public static String listQueues() {
         // List queues
-        AmazonSQS sqs = getAmazonSQS();
+        String sep = "";
+        AmazonSQS sqs = createAWSCredentials();
+        StringBuffer sb = new StringBuffer();
+        sb.append("[");
         System.out.println("Listing all queues in your account.\n");
         for (String queueUrl : sqs.listQueues().getQueueUrls()) {
             System.out.println("  QueueUrl: " + queueUrl);
+            sb.append(sep);
+            sb.append("\"url\":");
+            sb.append("\"");
+            sb.append(queueUrl);
+            sb.append("\"");
+            if ("".equals(sep)) sep = ",";
         }
+        sb.append("]");
         System.out.println();
-        return sqs.listQueues().getQueueUrls();
+        return sb.toString();
     }
 
     public static String createQueue(String queueName) {
         // Create a queue
-        AmazonSQS sqs = getAmazonSQS();
+        AmazonSQS sqs = createAWSCredentials();
         assert queueName != null;
         System.out.println("Creating a new SQS queue called " + queueName + ".\n");
         CreateQueueRequest createQueueRequest = new CreateQueueRequest(queueName);
         return sqs.createQueue(createQueueRequest).getQueueUrl();
     }
 
-    public static void deleteMessages(List<Message> messages) {
+    public static void deleteMessages(String messageRecieptHandle) {
         // Delete a message
-        AmazonSQS sqs = getAmazonSQS();
+        AmazonSQS sqs = createAWSCredentials();
         System.out.println("Deleting a message.\n");
-        String messageRecieptHandle = messages.get(0).getReceiptHandle();
+        // String messageRecieptHandle = messages.get(0).getReceiptHandle();
         sqs.deleteMessage(new DeleteMessageRequest(myQueueUrl, messageRecieptHandle));
     }
 
-    public static List<Message> readMessage() {
+    public static String readMessage(String messageID) {
         // Receive messages
-        AmazonSQS sqs = getAmazonSQS();
+        AmazonSQS sqs = createAWSCredentials();
         System.out.println("Receiving messages from " + myQueueUrl + ".\n");
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(myQueueUrl);
         List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
+        StringBuffer sb = new StringBuffer();
+        sb.append("[");
+        String sep = "";
+        String receipt = null;
         for (Message message : messages) {
-            System.out.println("  Message");
-            System.out.println("    MessageId:     " + message.getMessageId());
-            System.out.println("    ReceiptHandle: " + message.getReceiptHandle());
-            System.out.println("    MD5OfBody:     " + message.getMD5OfBody());
-            System.out.println("    Body:          " + message.getBody());
-            for (Entry<String, String> entry : message.getAttributes().entrySet()) {
-                System.out.println("  Attribute");
-                System.out.println("    Name:  " + entry.getKey());
-                System.out.println("    Value: " + entry.getValue());
+            if (message.getMessageId().equals(messageID)) {
+                displayMessageContent(message);
+                sb.append(sep);
+                sb.append("\"message\" :");
+                sb.append(message.getBody());
+                if ("".equals(sep)) sep = ",";
+                receipt = message.getReceiptHandle();
+                deleteMessages(receipt);
             }
         }
+        sb.append("]");
         System.out.println();
-        return messages;
+        return sb.toString();
     }
 
-    public static SendMessageResult sendMessage(String messageText) {
-        // Send a message
-        AmazonSQS sqs = getAmazonSQS();
-        System.out.println("Sending a message to " + myQueueUrl + ".\n");
-        return sqs.sendMessage(new SendMessageRequest(myQueueUrl, messageText));
-    }
-
-
-    /*
-     * The ProfileCredentialsProvider will return your [default]
-     * credential profile by reading from the credentials file located at
-     * (~/.aws/credentials).
-     * TO DO - rewrite this to pass in credentials
-     */
-    private static AmazonSQS getAmazonSQS() {
-
-        try {
-            if (credentials == null) {
-                credentials = new ProfileCredentialsProvider().getCredentials();
-            }
-        } catch (Exception e) {
-            throw new AmazonClientException(
-                    "Cannot load the credentials from the credential profiles file. " +
-                            "Please make sure that your credentials file is at the correct " +
-                            "location (~/.aws/credentials), and is in valid format.",
-                    e);
+    private static void displayMessageContent(Message message) {
+        System.out.println("  Message");
+        System.out.println("    MessageId:     " + message.getMessageId());
+        System.out.println("    ReceiptHandle: " + message.getReceiptHandle());
+        System.out.println("    MD5OfBody:     " + message.getMD5OfBody());
+        System.out.println("    Body:          " + message.getBody());
+        for (Entry<String, String> entry : message.getAttributes().entrySet()) {
+            System.out.println("  Attribute");
+            System.out.println("    Name:  " + entry.getKey());
+            System.out.println("    Value: " + entry.getValue());
         }
-
-        AmazonSQS sqs = new AmazonSQSClient(credentials);
-        Region region = Region.getRegion(myRegion);
-        sqs.setRegion(region);
-
-        System.out.println("===========================================");
-        System.out.println("Getting Started with Amazon SQS");
-        System.out.println("===========================================\n");
-        return sqs;
     }
+
+    public static String sendMessage(String messageText) {
+        // Send a message
+        AmazonSQS sqs = createAWSCredentials();
+        System.out.println("Sending a message to " + myQueueUrl + ".\n");
+        SendMessageResult result = sqs.sendMessage(new SendMessageRequest(myQueueUrl, messageText));
+        return result.getMessageId();
+    }
+
 }

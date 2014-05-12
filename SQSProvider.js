@@ -38,13 +38,19 @@ function amazonSQSrCreate() {
      result.createQueue = function createQueue(queueName){
              var response = SysUtility.listQueues(queueName,configSetup.AWSAccessKeyId,configSetup.AWSSecretKey);
              out.println(response);
-             return JSON.parse(response);
+             return response;
       };
 
      result.deleteQueue = function deleteQueue(queueName){
-           var response = SysUtility.deleteQueue(queueName,configSetup.AWSAccessKeyId,configSetup.AWSSecretKey);
-           out.println(response);
-           return JSON.parse(response);
+          SysUtility.deleteQueue(queueName,configSetup.AWSAccessKeyId,configSetup.AWSSecretKey);
+          // out.println(response);
+          // return response;
+     };
+
+    result.sendEmail = function sendEmail(from,to,subject,body){
+          SysUtility.sendEmail(configSetup.AWSAccessKeyId,configSetup.AWSSecretKey,from,to,subject,body);
+           out.println("message sent");
+          // return JSON.parse(response);
      };
 
     return result;
