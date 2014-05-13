@@ -1,7 +1,6 @@
 function amazonSQSrCreate() {
     var result = {};
 
-    var STORMPATH_BASE_URL = 'https://api.stormpath.com/v1/';
     var result = {};
     var configSetup = {
         AWSAccessKeyId : "",
@@ -12,18 +11,19 @@ function amazonSQSrCreate() {
     result.configure = function configure(myConfig) {
         configSetup.AWSAccessKeyId = myConfig.AWSAccessKeyId || "";
         configSetup.AWSSecretKey = myConfig.AWSSecretKey || "";
-        configSetup.SQSQueueName = myConfig.SQSQueueName || "";
+        configSetup.SQSSendQueueName = myConfig.SQSSendQueueName || "";
+        configSetup.SQSReadQueueName = myConfig.SQSReadQueueName || "";
     };
 
     result.readMessage = function readMessage(){
-        var response = SysUtility.readMessage(configSetup.SQSQueueName,configSetup.AWSAccessKeyId,configSetup.AWSSecretKey);
+        var response = SysUtility.readMessage(configSetup.SQSReadQueueName,configSetup.AWSAccessKeyId,configSetup.AWSSecretKey);
         out.println(response);
         return response;
 
     };
 
     result.sendMessage = function sendMessage(msg){
-         var response = SysUtility.sendMessage(configSetup.SQSQueueName,    configSetup.AWSAccessKeyId,configSetup.AWSSecretKey,msg);
+         var response = SysUtility.sendMessage(configSetup.SQSSendQueueName,    configSetup.AWSAccessKeyId,configSetup.AWSSecretKey,msg);
          out.println(response);
          return response;
     };
