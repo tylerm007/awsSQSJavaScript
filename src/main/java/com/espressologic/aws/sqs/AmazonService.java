@@ -14,7 +14,7 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
  */
 public class AmazonService {
     protected static AWSCredentials credentials = null;
-    private static Regions myRegion = Regions.US_EAST_1;/// TO DO - pass as parm?
+    protected static Regions myRegion = Regions.US_EAST_1;/// TO DO - pass as parm?
 
 
     public AmazonService(String accessKey, String secretKey) {

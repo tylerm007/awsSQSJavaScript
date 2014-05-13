@@ -5,7 +5,8 @@ function amazonSQSrCreate() {
     var configSetup = {
         AWSAccessKeyId : "",
         AWSSecretKey: "",
-        SQSQueueName : ""
+        SQSSendQueueName : "",
+        SQSReadQueueName : ""
     };
 
     result.configure = function configure(myConfig) {
@@ -23,7 +24,7 @@ function amazonSQSrCreate() {
     };
 
     result.sendMessage = function sendMessage(msg){
-         var response = SysUtility.sendMessage(configSetup.SQSSendQueueName,    configSetup.AWSAccessKeyId,configSetup.AWSSecretKey,msg);
+         var response = SysUtility.sendMessage(configSetup.SQSSendQueueName, configSetup.AWSAccessKeyId,configSetup.AWSSecretKey,msg);
          out.println(response);
          return response;
     };

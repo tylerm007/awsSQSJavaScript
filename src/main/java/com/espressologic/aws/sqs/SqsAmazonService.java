@@ -48,6 +48,8 @@ public class SqsAmazonService extends AmazonService {
 
         try {
             credentials = null;
+           // SqsAmazonService sqsAmazonService = new SqsAmazonService("OUXKJKKW82ZX2IRMTPPBVYDQX","F99Sz5llVDM0Y4X7FVSZCgYGTos5rJ2/A5nPLkB476U");
+
             SqsAmazonService.myQueueUrl = createQueue("EspressoLogic9");
             listQueues();
             String msgID = sendMessage("My Message Test");
@@ -75,22 +77,25 @@ public class SqsAmazonService extends AmazonService {
 
     public SqsAmazonService(String myEndpoint) {
         super();
-        System.out.println("queue endpoint name " + myEndpoint);
+        setEndPoint(myEndpoint);
+    }
+
+    private void setEndPoint(String myEndpoint) {
         this.endpoint = myEndpoint;
+        System.out.println("queue endpoint name " + myEndpoint);
         this.myQueueUrl = createQueue(endpoint);
         System.out.println(this.myQueueUrl);
     }
 
     public SqsAmazonService(String accessKey, String secretKey) {
-        credentials = new BasicAWSCredentials(accessKey, secretKey);
+        super(accessKey, secretKey);
     }
 
     public SqsAmazonService(String myEndpoint, String accessKey, String secretKey) {
-        System.out.println("queue endpoint name " + myEndpoint);
-        endpoint = myEndpoint;
-        this.myQueueUrl = createQueue(endpoint);
-        System.out.println(this.myQueueUrl);
-        credentials = new BasicAWSCredentials(accessKey, secretKey);
+        super(accessKey, secretKey);
+        setEndPoint(myEndpoint);
+
+
     }
 
     public static void deleteQueue() {
@@ -176,11 +181,17 @@ public class SqsAmazonService extends AmazonService {
         }
     }
 
+    /**
+     * return only the message ID
+     * @param messageText
+     * @return
+     */
     public static String sendMessage(String messageText) {
         // Send a message
         AmazonSQS sqs = createAWSCredentials();
         System.out.println("Sending a message to " + myQueueUrl + ".\n");
         SendMessageResult result = sqs.sendMessage(new SendMessageRequest(myQueueUrl, messageText));
+        System.out.println(result.toString());
         return result.getMessageId();
     }
 
