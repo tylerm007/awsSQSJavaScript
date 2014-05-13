@@ -2,13 +2,13 @@ out = java.lang.System.out;
 
 var SysUtility = {
 
-    sendMessage : function sqsClient(myQueue,accessKey,secretKey,message) {
-            var sqsClient = new com.espressologic.aws.sqs.SqsAmazonService(myQueue,accessKey,secretKey);
+    sendMessage : function sqsClient(sendQueue,accessKey,secretKey,message) {
+            var sqsClient = new com.espressologic.aws.sqs.SqsAmazonService(sendQueue,accessKey,secretKey);
             var result = sqsClient.sendMessage(message);
             return result;
     },
-    readMessage : function sqsClient(myQueue,accessKey,secretKey,messageID) {
-	        var sqsClient = new com.espressologic.aws.sqs.SqsAmazonService(myQueue,accessKey,secretKey);
+    readMessage : function sqsClient(readdQueue,accessKey,secretKey,messageID) {
+	        var sqsClient = new com.espressologic.aws.sqs.SqsAmazonService(readdQueue,accessKey,secretKey);
 	        var result = sqsClient.readMessage(messageID);
 	        return result;
     },
@@ -39,7 +39,8 @@ load("SQSProvider.js");
 var configSetup = {
     AWSAccessKeyId : "myAccessKey",
     AWSSecretKey: "mySecretKey",
-    SQSQueueName : "EspressoLogic7"
+    SQSSendQueueName : "EspressoLogicSendQ",
+    SQSReadQueueName : "EspressoLogicReadQ"
 };
 
 
