@@ -1,0 +1,101 @@
+#!/bin/bash
+#
+# el-pisync		This shell script takes care of starting and stopping
+#		el-pisync
+#
+# chkconfig: - 90 60
+# description: el-pisync is the Expresso Logic Sync daemon.
+
+### BEGIN INIT INFO
+# Provides: el-pisync
+# Description: el-pisync is Espresso Logic's Scheduled Transaction to Partner Interface capability.
+# It has a use case and design pattern to synchronize a local database with an external partner’s 
+# system using Amazon SQS message service.
+### END INIT INFO
+
+# Source function library.
+. /etc/init.d/functions
+
+PROG=el-pisync
+LOCKFILE=/var/lock/subsys/$PROG
+PIDFILE=/var/run/${PROG}.pid
+TOMCAT_USER="${TOMCAT_USER:-tomcat}"
+SCRIPT=/usr/share/espresso/el-pisync.sh
+RETVAL="0"
+
+# For SELinux we need to use 'runuser' not 'su'
+if [ -x "/sbin/runuser" ]; then
+    SU="/sbin/runuser -s /bin/sh"
+else
+    SU="/bin/su -s /bin/sh"
+fi
+
+start() {
+	[ -x $SCRIPT ] || exit 1
+
+	# Start daemon.
+	echo -n $"Starting $PROG: "
+       	[ $RETVAL -eq "0" ] && $SU - $TOMCAT_USER -c "$SCRIPT" 2>&1 || RETVAL="4"
+    	if [ $RETVAL -eq "0" ]; then
+        	success
+        	touch ${LOCKFILE}
+    	else
+        	echo -n "Error code ${RETVAL}"
+        	failure
+    	fi
+}
+
+stop() {
+	[ "$EUID" != "0" ] && exit 4
+        echo -n $"Shutting down $PROG: "
+    	#check to see if pid file is good. We only want to stop el-pisync if
+    	#we started it from this init script
+    	running_pid=$(pgrep -f org.mozilla.javascript.tools.shell.Main)
+    	if [ -f ${PIDFILE} ]; then
+        	read kpid junk< ${PIDFILE}
+        	if [ -z "$kpid" ]; then
+            		echo -n "PID file empty"
+            		rm -f ${LOCKFILE} ${PIDFILE} 2>&1
+            		failure
+            		exit 4
+        	fi
+        	if [ -z "$running_pid" ]; then
+            		echo -n "no ${PROG} running, but pid file exists - cleaning up"
+            		rm -f ${LOCKFILE} ${PIDFILE} 2>&1
+            		success
+            		exit 0
+        	fi
+        	if [ -z "$(echo ${kpid} | fgrep -x "${running_pid}")" ]; then
+            		echo -n "PID file does not match pid of any running ${PROG}"
+            		failure
+            		rm -f ${LOCKFILE} ${PIDFILE} 2>&1
+            		exit 4
+        	fi
+        fi
+	kill $kpid > /dev/null 2>&1
+	kill $running_pid > /dev/null 2>&1
+	RETVAL=$?
+        echo
+	[ $RETVAL -eq 0 ] && rm -f ${LOCKFILE} ${PIDFILE} 2>&1
+	return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	status $PROG
+	;;
+  restart|force-reload)
+	stop
+	start
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart}"
+	exit 2
+esac
