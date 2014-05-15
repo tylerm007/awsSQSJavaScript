@@ -46,8 +46,8 @@ load("SQSProvider.js");
 //    SQSQueueName : "EspressoLogic7"
 //};
 var configSetup = {
-    AWSAccessKeyId : "AKIAJCX57NYTDTNT7Q3Q",
-    AWSSecretKey: "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",
+    AWSAccessKeyId : "Variabilize this shit.",
+    AWSSecretKey: "",
     SQSSendQueueName : "EspressoLogic",
     SQSReadQueueName : "EspressoLogic"
 };
